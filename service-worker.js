@@ -1,11 +1,11 @@
 const CACHE_NAME = 'tanaka-cache-v1';
 const CACHE_URLS = [
-  '/',
-  '/index.html',
-  '/game.js',
-  '/style.css',
-  '/manifest.json',
-  '/assets/icon.svg'
+  './',
+  './index.html',
+  './game.js',
+  './style.css',
+  './manifest.json',
+  './assets/icon.svg'
 ];
 
 self.addEventListener('install', (evt) => {

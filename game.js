@@ -29,7 +29,7 @@ let caughtCount = 0;
 let running = false;
 let lastTime = performance.now();
 let spawnTimer = 0;
-let debugMode = false; // toggles debug overlay (D or checkbox) // set true to start with overlay visible
+let debugMode = false; // toggles debug overlay (D or checkbox) // OFF BY DEFAULT for performance
 const DEBUG_KEY = 'tanaka_debug';
 const DEBUG_SETTINGS_KEY = 'tanaka_debug_settings';
 let debugShowMironRing = true;
@@ -183,11 +183,12 @@ class Entity {
 class Player extends Entity{
   constructor(){ super(80,H/2,14,'#1a202c'); this.speed=200; this.name='Mr. Tanaka'; }
   update(dt){
+    let dx = 0, dy = 0;
     // If the user is touching/clicking and no keyboard keys are pressed, move toward touchTarget
     const anyKey = Object.values(keys).some(v => !!v);
     if(touchTarget && !anyKey){
-      const dx = touchTarget.x - this.x;
-      const dy = touchTarget.y - this.y;
+      dx = touchTarget.x - this.x;
+      dy = touchTarget.y - this.y;
       const dist = Math.hypot(dx,dy) || 1;
       const maxStep = this.speed * dt;
       const move = Math.min(dist, maxStep);
@@ -196,7 +197,6 @@ class Player extends Entity{
       // facing
       if(dx < 0) this.facing = -1; else if(dx > 0) this.facing = 1;
     } else {
-      let dx=0,dy=0;
       if(keys['ArrowLeft']||keys['a']) dx=-1;
       if(keys['ArrowRight']||keys['d']) dx=1;
       if(keys['ArrowUp']||keys['w']) dy=-1;
@@ -378,13 +378,45 @@ teachers[1].sprite = sprites.teacher2.img; teachers[1].frameCount = sprites.teac
 function spawnStudent(){
   // avoid spawning inside hideouts by retrying a few times
   let y, x; let tries = 0;
-  do{ y = 40 + Math.random()*(H-80); x = 220 + Math.random()*(detentionX-240); tries++; }while(tries < 8 && hideouts.some(h => pointInRect(x,y,h)));
-  const ruleBreaker = Math.random() < ruleBreakerChance; // depends on level
+  do{ 
+    y = 40 + Math.random()*(H-80); 
+    x = 220 + Math.random()*(detentionX-240); 
+    tries++; 
+  }while(tries < 5 && hideouts.some(h => pointInRect(x,y,h)));
+  
+  const ruleBreaker = Math.random() < ruleBreakerChance;
   const s = new Student(x,y,ruleBreaker);
-  // scale speed slightly with level
   s.speed *= studentSpeedMult;
-  // assign theme-aware sprites/colors
-  if(ruleBreaker){ if(currentTheme.sprites && currentTheme.sprites.rulebreaker){ s.sprite = currentTheme.sprites.rulebreaker.img; s.frameCount = currentTheme.sprites.rulebreaker.frames; s.frameW = currentTheme.sprites.rulebreaker.fw; s.frameH = currentTheme.sprites.rulebreaker.fh; } else { s.sprite = sprites.rulebreaker.img; s.frameCount = sprites.rulebreaker.frames; s.frameW = sprites.rulebreaker.fw; s.frameH = sprites.rulebreaker.fh; } s.color = currentTheme.rulebreakerColor; s.frameInterval = 0.16; } else { if(currentTheme.sprites && currentTheme.sprites.student){ s.sprite = currentTheme.sprites.student.img; s.frameCount = currentTheme.sprites.student.frames; s.frameW = currentTheme.sprites.student.fw; s.frameH = currentTheme.sprites.student.fh; } else { s.sprite = sprites.student.img; s.frameCount = sprites.student.frames; s.frameW = sprites.student.fw; s.frameH = sprites.student.fh; } s.color = currentTheme.studentColor; s.frameInterval = 0.18; }
+  
+  if(ruleBreaker){ 
+    if(currentTheme.sprites && currentTheme.sprites.rulebreaker){ 
+      s.sprite = currentTheme.sprites.rulebreaker.img; 
+      s.frameCount = currentTheme.sprites.rulebreaker.frames; 
+      s.frameW = currentTheme.sprites.rulebreaker.fw; 
+      s.frameH = currentTheme.sprites.rulebreaker.fh; 
+    } else { 
+      s.sprite = sprites.rulebreaker.img; 
+      s.frameCount = sprites.rulebreaker.frames; 
+      s.frameW = sprites.rulebreaker.fw; 
+      s.frameH = sprites.rulebreaker.fh; 
+    } 
+    s.color = currentTheme.rulebreakerColor; 
+    s.frameInterval = 0.16; 
+  } else { 
+    if(currentTheme.sprites && currentTheme.sprites.student){ 
+      s.sprite = currentTheme.sprites.student.img; 
+      s.frameCount = currentTheme.sprites.student.frames; 
+      s.frameW = currentTheme.sprites.student.fw; 
+      s.frameH = currentTheme.sprites.student.fh; 
+    } else { 
+      s.sprite = sprites.student.img; 
+      s.frameCount = sprites.student.frames; 
+      s.frameW = sprites.student.fw; 
+      s.frameH = sprites.student.fh; 
+    } 
+    s.color = currentTheme.studentColor; 
+    s.frameInterval = 0.18; 
+  }
   students.push(s);
 }
 
@@ -499,13 +531,22 @@ function update(dt){
   updateParticles(dt);
 }
 
+let cachedGradient = null;
+let cachedGradientTheme = null;
+let frameCounter = 0; // for animations
+
 function draw(){
-  // background theme
+  frameCounter++;
+  // background theme (cache gradient to avoid recreating every frame)
   ctx.clearRect(0,0,W,H);
-  const g = ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0, currentTheme.bg1);
-  g.addColorStop(1, currentTheme.bg2);
-  ctx.fillStyle = g;
+  if(cachedGradient === null || cachedGradientTheme !== currentTheme){
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, currentTheme.bg1);
+    g.addColorStop(1, currentTheme.bg2);
+    cachedGradient = g;
+    cachedGradientTheme = currentTheme;
+  }
+  ctx.fillStyle = cachedGradient;
   ctx.fillRect(0,0,detentionX, H);
   // detention zone
   ctx.fillStyle = currentTheme.detentionColor || '#f1f5f9';
@@ -514,13 +555,12 @@ function draw(){
   ctx.font = '14px sans-serif';
   ctx.fillText('Detention', detentionX+18, 22);
 
-  // hideouts (background interactive areas)
+  // hideouts (background interactive areas) - skip occupancy text for performance
   for(const h of hideouts){
     ctx.fillStyle = h.color || 'rgba(110,122,142,0.22)';
     ctx.fillRect(h.x, h.y, h.w, h.h);
     ctx.strokeStyle = 'rgba(80,90,100,0.18)';
     ctx.strokeRect(h.x, h.y, h.w, h.h);
-    if(h.occupancy){ ctx.fillStyle = '#222'; ctx.font = '12px sans-serif'; ctx.fillText(`● ${h.occupancy}`, h.x + 8, h.y + 16); }
   }
 
   // particles (behind entities)
@@ -532,36 +572,65 @@ function draw(){
   }
   // teachers
   for(const t of teachers) t.draw();
-  // teacher labels
-  for(const t of teachers){ ctx.fillStyle = '#222'; ctx.font = '12px sans-serif'; let txt = t.name + (t.power && t.power > 1 ? ' ★' : ''); if(t.name === 'Fukahori') txt += ' ✨'; ctx.fillText(txt, t.x - ctx.measureText(txt).width/2, t.y - t.r - 8); }
+  // teacher labels (cache font setting)
+  ctx.fillStyle = '#222';
+  ctx.font = '12px sans-serif';
+  for(const t of teachers){ 
+    let txt = t.name + (t.power && t.power > 1 ? ' ★' : ''); 
+    if(t.name === 'Fukahori') txt += ' ✨'; 
+    const width = ctx.measureText(txt).width;
+    ctx.fillText(txt, t.x - width/2, t.y - t.r - 8); 
+  }
+  
   // player label (visible name)
-  (function(){
-    const label = 'TANAKA BOSS';
-    ctx.font = 'bold 14px sans-serif';
-    // outline for readability
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.textAlign = 'center';
-    ctx.strokeText(label, player.x, player.y - player.r - 10);
-    ctx.fillStyle = '#ffd700';
-    ctx.fillText(label, player.x, player.y - player.r - 10);
-    // restore defaults
-    ctx.textAlign = 'start';
-    ctx.lineWidth = 1;
-  })();
+  const label = 'TANAKA BOSS';
+  ctx.font = 'bold 14px sans-serif';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.textAlign = 'center';
+  ctx.strokeText(label, player.x, player.y - player.r - 10);
+  ctx.fillStyle = '#ffd700';
+  ctx.fillText(label, player.x, player.y - player.r - 10);
+  ctx.textAlign = 'start';
+  ctx.lineWidth = 1;
 
   // Miron label (if present) with pulsing ring
   if(miron){
-    // pulsing ring for visual cue (respect debug flag)
-    if(debugShowMironRing){ const tPulse = performance.now() / 300; const rad = miron.r + 6 + Math.abs(Math.sin(tPulse)) * 8; ctx.save(); ctx.beginPath(); ctx.strokeStyle = 'rgba(123,31,162,0.16)'; ctx.lineWidth = 6; ctx.arc(miron.x, miron.y, rad, 0, Math.PI*2); ctx.stroke(); ctx.restore(); }
-    ctx.font = 'bold 13px sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.textAlign = 'center'; ctx.strokeText('MIRON', miron.x, miron.y - miron.r - 10); ctx.fillStyle = '#ff6bcb'; ctx.fillText('MIRON', miron.x, miron.y - miron.r - 10); ctx.textAlign = 'start'; ctx.lineWidth = 1;
+    // pulsing ring using simple frame counter (faster than performance.now())
+    if(debugShowMironRing){ 
+      const rad = miron.r + 6 + Math.abs(Math.sin(frameCounter * 0.02)) * 8; 
+      ctx.save(); 
+      ctx.beginPath(); 
+      ctx.strokeStyle = 'rgba(123,31,162,0.16)'; 
+      ctx.lineWidth = 6; 
+      ctx.arc(miron.x, miron.y, rad, 0, Math.PI*2); 
+      ctx.stroke(); 
+      ctx.restore(); 
+    }
+    ctx.font = 'bold 13px sans-serif'; 
+    ctx.lineWidth = 3; 
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)'; 
+    ctx.textAlign = 'center'; 
+    ctx.strokeText('MIRON', miron.x, miron.y - miron.r - 10); 
+    ctx.fillStyle = '#ff6bcb'; 
+    ctx.fillText('MIRON', miron.x, miron.y - miron.r - 10); 
+    ctx.textAlign = 'start'; 
+    ctx.lineWidth = 1;
   }
   // player
   player.draw();
 
   // overlays
   // highlight rule-breakers (tinted by theme)
-  for(const s of students){ if(s.ruleBreaker && !s.caught){ ctx.strokeStyle = 'rgba(255,0,80,0.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s.x,s.y,s.r+6,0,Math.PI*2); ctx.stroke(); } }
+  ctx.strokeStyle = 'rgba(255,0,80,0.9)';
+  ctx.lineWidth = 2;
+  for(const s of students){ 
+    if(s.ruleBreaker && !s.caught){ 
+      ctx.beginPath(); 
+      ctx.arc(s.x,s.y,s.r+6,0,Math.PI*2); 
+      ctx.stroke(); 
+    } 
+  }
 
   // HUD
   ctx.fillStyle = '#000';
@@ -643,16 +712,79 @@ function updateHighScoreList(){ const list = document.getElementById('highScoreL
 const hudTicker = setInterval(()=>{ updateHUD(); }, 200);
 
 // Debug overlay draws entity radii, teacher influence, hideout occupancy, and miron spawn info
-function drawDebugOverlay(){ if(!debugMode) return; ctx.save(); ctx.globalAlpha = 0.95; ctx.font = '12px monospace'; ctx.fillStyle = 'rgba(0,0,0,0.8)'; const rbCount = students.filter(s=>s.ruleBreaker && !s.hidden).length; const hiddenCount = students.filter(s=>s.hidden).length; const lines = [ `Debug: ${students.length} students (RB:${rbCount}, hidden:${hiddenCount})`, `Level:${level} Miron@${Math.round(mironSpawnThreshold*100)}% (${mironSpawned? 'spawned' : 'pending'})`, `SpawnInterval:${spawnInterval.toFixed(2)}s`, `MironRing:${debugShowMironRing? 'on':'off'}`, `TeacherRadius:${debugShowTeacherRadius? 'on':'off'}` ]; for(let i=0;i<lines.length;i++){ ctx.fillText(lines[i], 12, 16 + i*14); }
+function drawDebugOverlay(){ 
+  if(!debugMode) return; 
+  ctx.save(); 
+  ctx.globalAlpha = 0.95; 
+  ctx.font = '12px monospace'; 
+  ctx.fillStyle = 'rgba(0,0,0,0.8)'; 
+  
+  let rbCount = 0, hiddenCount = 0;
+  for(let i = 0; i < students.length; i++){
+    if(students[i].ruleBreaker && !students[i].hidden) rbCount++;
+    if(students[i].hidden) hiddenCount++;
+  }
+  
+  const lines = [ 
+    `Debug: ${students.length} students (RB:${rbCount}, hidden:${hiddenCount})`, 
+    `Level:${level} Miron@${Math.round(mironSpawnThreshold*100)}% (${mironSpawned? 'spawned' : 'pending'})`, 
+    `SpawnInterval:${spawnInterval.toFixed(2)}s`, 
+    `MironRing:${debugShowMironRing? 'on':'off'}`, 
+    `TeacherRadius:${debugShowTeacherRadius? 'on':'off'}` 
+  ]; 
+  for(let i=0;i<lines.length;i++){ ctx.fillText(lines[i], 12, 16 + i*14); }
+  
   // draw player radius
   ctx.strokeStyle = 'rgba(255,215,0,0.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.stroke(); ctx.fillStyle='rgba(255,215,0,0.9)'; ctx.fillText(`Player r=${player.r}`, player.x + player.r + 6, player.y);
-  // draw students
-  for(const s of students){ if(s.hidden){ ctx.strokeStyle='rgba(120,120,120,0.35)'; } else if(s.ruleBreaker){ ctx.strokeStyle='rgba(255,0,80,0.9)'; } else { ctx.strokeStyle='rgba(0,120,220,0.6)'; } ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(s.x, s.y, s.r + 6, 0, Math.PI*2); ctx.stroke(); if(s.isMiron){ ctx.strokeStyle='rgba(123,31,162,0.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s.x, s.y, s.r+20, 0, Math.PI*2); ctx.stroke(); ctx.fillStyle='rgba(60,0,80,0.9)'; ctx.fillText('MIRON', s.x + s.r + 6, s.y); } }
+  
+  // draw students with fewer per-frame allocations
+  for(let i = 0; i < students.length; i++){ 
+    const s = students[i];
+    if(s.hidden){ ctx.strokeStyle='rgba(120,120,120,0.35)'; } 
+    else if(s.ruleBreaker){ ctx.strokeStyle='rgba(255,0,80,0.9)'; } 
+    else { ctx.strokeStyle='rgba(0,120,220,0.6)'; } 
+    ctx.lineWidth = 1; 
+    ctx.beginPath(); 
+    ctx.arc(s.x, s.y, s.r + 6, 0, Math.PI*2); 
+    ctx.stroke(); 
+    if(s.isMiron){ 
+      ctx.strokeStyle='rgba(123,31,162,0.9)'; 
+      ctx.lineWidth = 2; 
+      ctx.beginPath(); 
+      ctx.arc(s.x, s.y, s.r+20, 0, Math.PI*2); 
+      ctx.stroke(); 
+      ctx.fillStyle='rgba(60,0,80,0.9)'; 
+      ctx.fillText('MIRON', s.x + s.r + 6, s.y); 
+    } 
+  }
+  
   // teachers influence radius (optional)
-  if(debugShowTeacherRadius){ for(const t of teachers){ const p = t.power || 1; const inf = 40 * p; ctx.strokeStyle='rgba(6,214,160,0.32)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(t.x,t.y,inf,0,Math.PI*2); ctx.stroke(); ctx.fillStyle='rgba(0,0,0,0.75)'; ctx.fillText(`${t.name} r=${Math.round(inf)}`, t.x + inf + 6, t.y - 2); } }
+  if(debugShowTeacherRadius){ 
+    for(let i = 0; i < teachers.length; i++){ 
+      const t = teachers[i];
+      const p = t.power || 1; 
+      const inf = 40 * p; 
+      ctx.strokeStyle='rgba(6,214,160,0.32)'; 
+      ctx.lineWidth = 1; 
+      ctx.beginPath(); 
+      ctx.arc(t.x,t.y,inf,0,Math.PI*2); 
+      ctx.stroke(); 
+      ctx.fillStyle='rgba(0,0,0,0.75)'; 
+      ctx.fillText(`${t.name} r=${Math.round(inf)}`, t.x + inf + 6, t.y - 2); 
+    } 
+  }
+  
   // hideouts occupancy
-  for(const h of hideouts){ ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth = 1; ctx.strokeRect(h.x - 1, h.y - 1, h.w + 2, h.h + 2); ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillText(`occ:${h.occupancy}/${h.maxOccupancy}`, h.x + 6, h.y + 14); }
-  ctx.restore(); }
+  for(let i = 0; i < hideouts.length; i++){ 
+    const h = hideouts[i];
+    ctx.strokeStyle='rgba(0,0,0,0.35)'; 
+    ctx.lineWidth = 1; 
+    ctx.strokeRect(h.x - 1, h.y - 1, h.w + 2, h.h + 2); 
+    ctx.fillStyle='rgba(0,0,0,0.7)'; 
+    ctx.fillText(`occ:${h.occupancy}/${h.maxOccupancy}`, h.x + 6, h.y + 14); 
+  }
+  ctx.restore(); 
+}
 
 requestAnimationFrame(gameLoop);
 setLevel(1);
