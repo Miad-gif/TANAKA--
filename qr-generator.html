@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mr. Tanaka QR Code Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 20px; }
+    .container { background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 32px; max-width: 500px; width: 100%; }
+    h1 { text-align: center; color: #333; margin-top: 0; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; color: #555; }
+    input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+    input:focus { outline: none; border-color: #667eea; }
+    button { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 12px; }
+    button:hover { background: #764ba2; }
+    #qrcode { text-align: center; margin-top: 20px; }
+    .note { background: #f0f4ff; padding: 12px; border-radius: 6px; font-size: 13px; color: #555; margin-top: 16px; }
+    .instructions { background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; color: #2e7d32; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📱 Mr. Tanaka QR Generator</h1>
+    <div class="form-group">
+      <label for="urlInput">Game URL:</label>
+      <input type="text" id="urlInput" placeholder="e.g., http://localhost:8080" value="http://localhost:8080">
+    </div>
+    <button onclick="generateQR()">Generate QR Code</button>
+    <div id="qrcode"></div>
+    <div class="instructions">
+      <strong>To share with teachers:</strong><br>
+      1. Enter your game URL (local server or deployed link)<br>
+      2. Click "Generate QR Code"<br>
+      3. Screenshot the QR code or print it<br>
+      4. Teachers scan with their phone to play!
+    </div>
+    <div class="note">
+      <strong>For local play:</strong> Run `npm run serve` then enter `http://localhost:8080` above.<br>
+      <strong>For internet sharing:</strong> Deploy to GitHub Pages (free) or Netlify — see deployment guide.
+    </div>
+  </div>
+  <script>
+    function generateQR() {
+      const url = document.getElementById('urlInput').value.trim();
+      if(!url) { alert('Please enter a URL'); return; }
+      document.getElementById('qrcode').innerHTML = '';
+      new QRCode(document.getElementById('qrcode'), {
+        text: url,
+        width: 256,
+        height: 256,
+        colorDark: "#000",
+        colorLight: "#fff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+    // Generate on Enter key
+    document.getElementById('urlInput').addEventListener('keypress', (e)=>{ if(e.key==='Enter') generateQR(); });
+    // Auto-generate on load
+    window.addEventListener('load', generateQR);
+  </script>
+</body>
+</html>

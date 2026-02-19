@@ -1,0 +1,9 @@
+{
+  "appId": "com.tanaka.boss",
+  "appName": "Mr. Tanaka: THE BOSS",
+  "webDir": "./",
+  "bundledWebRuntime": false,
+  "server": {
+    "cleartext": true
+  }
+}

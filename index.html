@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="no-referrer">
+  <title>Mr. Tanaka: THE BOSS</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a202c" />
+  <link rel="apple-touch-icon" href="assets/icon.svg">
+  <link rel="canonical" href="https://yourdomain.example">
+</head>
+<body>
+  <header>
+    <h1>Mr. Tanaka: THE BOSS 🏫</h1>
+    <p>Catch students who don't obey the rules. Help from teachers: Kawashima and Fukahori.</p>
+  </header>
+
+  <div class="controls">
+    <div class="info">
+      <div>Level: <span id="level">1</span></div>
+      <div>Theme: <span id="themeName">Classic</span></div>
+      <div>Score: <span id="score">0</span></div>
+      <div>Goal: <span id="goalProgress">0</span>/<span id="goalTarget">100</span> <span id="mironAlert" class="miron-alert hidden">⚠️ MIRON near!</span></div>
+      <div>Caught: <span id="caught">0</span></div>
+    </div>
+    <div class="buttons">
+      <button id="startBtn">Start Game</button>
+      <button id="resetBtn">Reset</button>
+      <button id="showHighScoresBtn">Show High Scores</button>
+      <label class="debug-toggle"><input type="checkbox" id="debugToggle"> Debug (D)</label>
+      <label class="debug-options"><input type="checkbox" id="debugMironRing"> Show Miron Ring</label>
+      <label class="debug-options"><input type="checkbox" id="debugTeacherRadius"> Show Teacher Radius</label>
+    </div>
+  </div>
+  <div class="goal-bar-wrap">
+    <div class="goal-bar" aria-hidden="true"><div id="goalBar" class="goal-fill" style="width:0%"></div></div>
+  </div>
+
+  <section class="highscores-panel" aria-hidden="false">
+    <h4>High Scores</h4>
+    <ol id="highScoreList" class="hs-list">
+    </ol>
+  </section>
+
+  <main>
+    <canvas id="gameCanvas" width="1200" height="560"></canvas>
+    <aside class="legend">
+      <h3>Legend</h3>
+      <ul>
+        <li><span class="legend-sprite tanaka"></span> <strong>TANAKA BOSS (You)</strong> <em>— Leader</em></li>
+        <li><span class="legend-sprite student"></span> Student</li>
+        <li><span class="legend-sprite rulebreaker"></span> Rule-breaker</li>
+        <li><span class="legend-sprite miron"></span> <strong>MIRON</strong> <em>(boss — appears near goal)</em></li>
+        <li><span class="legend-sprite hideout"></span> Hideout (students may hide)</li>
+        <li><span class="legend-sprite teacher1"></span> <strong>Kawashima</strong> <em>(powerful helper)</em></li>
+        <li><span class="legend-sprite teacher2"></span> Fukahori (helper)</li>
+        <li>Detention area on the right (caught students go there)</li>
+      </ul>
+    </aside>
+  </main>
+
+  <section class="instructions">
+    <h3>How to play</h3>
+    <ol>
+      <li>Use arrow keys or WASD to move Mr. Tanaka.</li>
+      <li>Find and touch the students with a red sign — they're breaking rules.</li>
+      <li>When caught, students are sent to the detention area.</li>
+      <li>Teachers Kawashima and Fukahori help by redirecting rule-breakers.</li>
+      <li>Catch the level goal to advance to the next level.</li>
+    </ol>
+  </section>
+
+  <div id="overlay" class="overlay hidden" aria-live="polite"></div>
+
+  <div id="scoreModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-inner">
+      <h3>Save your score</h3>
+      <p>Your score: <strong id="finalScore">0</strong> (Level: <span id="finalLevel">1</span>)</p>
+      <label>Enter name: <input id="playerName" type="text" maxlength="12" placeholder="Your name"></label>
+      <div class="modal-buttons">
+        <button id="saveScoreBtn">Save Score</button>
+        <button id="closeScoreModalBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    }
+  </script>
+  <script src="game.js"></script>
+</body>
+</html>
